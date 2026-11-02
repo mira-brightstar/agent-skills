@@ -322,8 +322,10 @@ skill-conductor/
 │   ├── run.mjs                  10 组回归
 │   ├── llm-two-pass.mjs         两段式 LLM 自测
 │   └── fixtures/                release-notes 与 6 个文风 fixture
-└── .github/workflows/skill-governance.yml
+└── .github/workflows/skill-governance.yml   # 单独分发时使用
 ```
+
+本仓库把该工作流放在仓库根 `.github/workflows/skill-conductor.yml`，并把工作目录指向本技能；单独分发本技能时，可把工作流放回技能目录并去掉工作目录设置。
 
 文档分工：用户从本文件开始；Agent 从 `SKILL.md` 开始，每次执行读 `references/agent-runbook.md`，只有进入 deferred 时才追加 `references/deferred.md`；`references/assessor`、`references/stylist`、`references/mentor` 是判定规则与锚点，供脚本与人工复核使用，日常评审不必通读。意图优先级已并入 `SKILL.md` 第 2 节，不再单独维护路由文件。
 
@@ -376,7 +378,7 @@ skill-conductor/
 
 ## 8. CI
 
-`.github/workflows/skill-governance.yml` 包含 5 个 job：
+本仓库的 CI 在仓库根 `.github/workflows/skill-conductor.yml`，包含 5 个 job：
 
 | job | 作用 | 阻塞 |
 |---|---|---|
@@ -386,7 +388,7 @@ skill-conductor/
 | `quality-score` | 质量评分门禁 | 是 |
 | `llm-judge` | 软轨报告 | 否 |
 
-未配置 `LLM_API_KEY` 时软轨跳过，不阻塞合并。`self-check` 同时校验 `references/assessor/checks.yaml` 与质量模型源码同步。CI 假定包目录就是仓库根；若作为子目录接入，需要把各 job 的路径改为实际路径。
+未配置 `LLM_API_KEY` 时软轨跳过，不阻塞合并。`self-check` 同时校验 `references/assessor/checks.yaml` 与质量模型源码同步。根工作流已把 `working-directory` 设为 `skills/skill-conductor`；若把本技能移到其他路径，同步修改该设置即可。
 
 ## 9. 仓库一致性配置
 
