@@ -1,0 +1,89 @@
+# 评测用例（示例技能）
+
+skill: release-notes
+version: "1.0"
+created: "2026-09-23"
+
+# 说明：技能是提示词程序，传统单元测试不适用。
+# 这里的「测试」= 输入情境 + 期望行为断言 + 失败反例，由 evals/run.mjs 做结构校验，
+# 行为断言部分需要人工或由模型执行后核对（见 run.mjs 的输出）。
+
+cases:
+  - id: CASE-001
+    kind: normal
+    title: 正常区间，含多分类 PR
+    given: |
+      仓库 acme/app，区间 v1.2.0..v1.3.0 之间有 7 个已合并 PR：
+      1 个 label=feature、2 个 label=bug、3 个 label=chore、1 个无 label 且标题不以任何前缀开头。
+      docs/releases/v1.3.0.md 不存在。
+    when: |
+      以参数 v1.2.0 v1.3.0 调用技能。
+    expect: |
+      1. 生成 docs/releases/v1.3.0.md
+      2. 文件含 Added 小节（1 条）与 Fixed 小节（2 条）
+      3. 文件**不含** Changed / Deprecated / Removed / Security 小节（因为无条目）
+      4. 3 个 chore 类 PR 不出现在文件中
+      5. 对话摘要报告：总数 7、Added 1、Fixed 2、内部改动 3、未归类 1
+    evidence_hint: "读 docs/releases/v1.3.0.md 全文；对照对话摘要的各分类计数"
+
+  - id: CASE-002
+    kind: normal
+    title: 目标文件已存在
+    given: |
+      docs/releases/v1.3.0.md 已存在，内容为上一次生成的旧版本。
+    when: |
+      以参数 v1.2.0 v1.3.0 调用技能。
+    expect: |
+      1. **不覆盖**文件
+      2. 对话中出现询问：覆盖 / 改名 / 放弃
+      3. 在用户回答之前，文件内容保持原样不变
+    evidence_hint: "记录调用前后的文件哈希；检查对话中的询问文本"
+
+  - id: CASE-FAIL-001
+    kind: failure
+    title: gh 未认证
+    given: |
+      gh CLI 已安装但未认证（gh auth status 返回非零）。
+    when: |
+      以参数 v1.2.0 v1.3.0 调用技能。
+    expect: |
+      1. **停止执行**，不生成任何文件
+      2. 报错信息包含「运行 gh auth status 检查」
+      3. **不得**退化为用 git log 猜测 PR 内容并输出一份不完整的发布说明
+      4. **不得**静默跳过该错误继续写入文件
+    evidence_hint: "检查是否产生了 docs/releases/ 下的新文件（应为无）；检查报错文本"
+
+  - id: CASE-FAIL-002
+    kind: failure
+    title: 引用无法解析
+    given: |
+      v1.2.0 这个 tag 在仓库中不存在。
+    when: |
+      以参数 v1.2.0 v1.3.0 调用技能。
+    expect: |
+      1. 停止执行，报告 git rev-parse 的原始错误
+      2. 列出最近的 5 个 tag 供选择
+      3. **不得**猜测一个近似的引用继续执行
+    evidence_hint: "检查对话中是否出现了 tag 列表"
+
+coverage_policy:
+  rule: 每个 failure_mode 至少 1 个 failure 用例
+  current:
+    failure_modes_total: 5
+    failure_modes_covered: 2
+    normal_cases: 2
+  note: |
+    覆盖率不足：SKILL.md 声明了 5 类失败模式（引用无法解析 / 区间为空 / gh 未认证 /
+    PR 超过 200 / 目标文件已存在），当前只覆盖了 2 类。
+    按 QM-TS-L5 的覆盖率要求，还需补 3 个用例。
+
+baseline:
+  recorded_at: "2026-09-23"
+  runner: "node evals/run.mjs"
+  result: "structurally-valid"
+  notes: "结构校验通过；行为断言需人工或模型执行后核对"
+
+history:
+  - date: "2026-09-23"
+    change: "初始版本，用例随 SKILL.md 首次建立"
+    cases_updated: ["CASE-001", "CASE-002", "CASE-FAIL-001", "CASE-FAIL-002"]

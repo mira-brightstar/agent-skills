@@ -1,0 +1,25 @@
+# skill-conductor 包 · 回归用例
+#
+# 覆盖：评定官硬轨、样本仓库复现、缺陷注入、文风 fixture、导师行为、四意图路由、两段式 LLM。
+
+cases:
+  - name: 示例技能硬轨全过
+    type: hard-baseline
+  - name: 样本仓库复现已知硬轨结论
+    type: sample-repo
+  - name: 注入硬编码凭证必须失败
+    type: credential-injection
+  - name: 目录名与 name 不一致必须失败
+    type: rename-mismatch
+  - name: 文风 6 个 fixture 符合预期
+    type: stylist-fixtures
+  - name: 导师 4 个行为场景符合预期
+    type: mentor-scenarios
+  - name: 四个意图路由正确且不短路
+    type: conductor-intents
+  - name: 两段式 LLM 在 direct 与 deferred 下产出三档置信度
+    type: llm-two-pass
+  - name: 文档结构、路径引用、用户报告契约与 Agent 运行手册
+    type: agent-runbook
+  - name: 平台适配与安全检查
+    type: platform-safety

@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skill-conductor.local/schema/agents-openai.schema.json",
+  "title": "agents/openai.yaml · L2 Codex 适配层",
+  "description": "Codex 侧技能 UI 元数据与调用策略。SPEC-062：声明支持 Codex 时必须提供本文件。层级为 SHOULD 而非 MUST——本 schema 的依据是 openai/skills 官方仓库代码，该文件未出现在 developers.openai.com 官方文档页。",
+  "$comment": "依据强度：【二手】E-18。若官方发布文档，本 schema 应复核并可能升格。SPEC-031 要求 policy.allow_implicit_invocation 与 SKILL.md 的 disable-model-invocation 严格一致。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["interface"],
+  "properties": {
+    "interface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["display_name", "short_description"],
+      "properties": {
+        "display_name": {
+          "$comment": "技能选择器中显示的名称。",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "short_description": {
+          "$comment": "技能选择器中显示的一句话说明。25-64 字符的上下限来自 openai/skills 的生成脚本【二手】。",
+          "type": "string",
+          "minLength": 25,
+          "maxLength": 64
+        },
+        "icon_small": {
+          "$comment": "小图标资源路径或 URL。",
+          "type": "string",
+          "minLength": 1
+        },
+        "icon_large": {
+          "$comment": "大图标资源路径或 URL。",
+          "type": "string",
+          "minLength": 1
+        },
+        "brand_color": {
+          "$comment": "品牌色，十六进制。",
+          "type": "string",
+          "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
+        },
+        "default_prompt": {
+          "$comment": "选中该技能时预填到输入框的提示词。",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "allow_implicit_invocation": {
+          "$comment": "SPEC-031：设为 false 等价于 SKILL.md 的 disable-model-invocation: true，二者必须一致。省略即默认为 true（model-invoked）。",
+          "type": "boolean"
+        }
+      }
+    },
+    "dependencies": {
+      "$comment": "SPEC-050 / SPEC-055：Codex 侧的结构化依赖声明。不得写入密钥（SPEC-070）。",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tools": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "value"],
+            "properties": {
+              "type": { "type": "string", "enum": ["mcp"] },
+              "value": { "type": "string", "minLength": 1 },
+              "description": { "type": "string" },
+              "transport": { "type": "string", "enum": ["stdio", "sse", "http", "streamable-http"] },
+              "url": { "type": "string", "pattern": "^https?://" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

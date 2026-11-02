@@ -1,0 +1,6 @@
+interface:
+  display_name: "目录索引生成"
+  short_description: "把一个目录下的 Markdown 文件汇总成一份可检索的索引"
+  default_prompt: "为当前目录生成 Markdown 索引。"
+policy:
+  allow_implicit_invocation: true

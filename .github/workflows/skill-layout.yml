@@ -1,0 +1,18 @@
+name: skill-layout
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  layout:
+    name: 通用技能结构检查
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: node .github/scripts/check-skill-layout.mjs

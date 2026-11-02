@@ -1,0 +1,76 @@
+# 评测用例
+#
+# STEP-07 中间产物 · 模板
+# 放置位置：<skill-dir>/evals/*.yaml
+# 检查点：含 case / expect 两类字段（由 scripts/assessor/score.mjs 的 QM-TS-L3 机器校验）
+#         且 ≥1 个失败路径用例 + 可执行运行器（QM-TS-L4）
+#
+# 设计说明：
+#   技能是提示词程序，传统单元测试不适用。本文件的「测试」定义为：
+#   一组可复现的评测用例 = 输入情境 + 期望行为断言 + 失败反例。
+#   判定靠「预期行为是否出现」，不是「代码是否抛异常」。
+#
+#   失败模式（STEP-03）是评测用例的来源：每个失败模式至少对应 1 个 fail_case。
+
+skill: <skill-name>
+version: "<技能版本，与仓库版本对齐>"
+created: "<YYYY-MM-DD>"
+
+cases:
+  # ---- 正常路径 ----
+  - id: "CASE-001"
+    kind: normal
+    title: "<一句话描述这个用例>"
+    given: |
+      <输入情境。要具体到可复现：什么仓库状态、什么参数、什么前置条件>
+    when: |
+      <执行什么动作。例如「以 v1.2.0 v1.3.0 为参数调用技能」>
+    expect: |
+      <期望行为断言。必须是可观察的：文件是否存在、包含哪些小节、
+       条目数是多少、对话里出现了什么。禁止写「结果令人满意」>
+    evidence_hint: "<如何取得判定证据：看哪个文件、哪条命令的输出>"
+
+  - id: "CASE-002"
+    kind: normal
+    title: "<边界输入：例如区间内没有 PR>"
+    given: |
+      <...>
+    when: |
+      <...>
+    expect: |
+      <...>
+    evidence_hint: "<...>"
+
+  # ---- 失败路径（至少 1 个，QM-TS-L4 要求）----
+  - id: "CASE-FAIL-001"
+    kind: failure
+    title: "<例如 gh 未认证>"
+    given: |
+      <构造失败条件>
+    when: |
+      <...>
+    expect: |
+      <期望**明确报错**而非静默降级。例如「停止并提示运行 gh auth status，
+       且**不得**退化为用 git log 猜测 PR 内容」>
+    evidence_hint: "<...>"
+
+# 覆盖率要求（QM-TS-L5 的判定依据）
+coverage_policy:
+  rule: "<例如「每个 failure_mode 至少 1 个 failure 用例」>"
+  current:
+    failure_modes_total: <N>
+    failure_modes_covered: <M>
+    normal_cases: <K>
+
+# 基线记录（STEP-10 填充）
+baseline:
+  recorded_at: "<YYYY-MM-DD>"
+  runner: "<运行命令，例如 node evals/run.mjs>"
+  result: "<pass / fail / manual>"
+  notes: "<基线时的已知偏差>"
+
+# 更新记录（QM-TS-L5 要求用例随行为变更同步更新）
+history:
+  - date: "<YYYY-MM-DD>"
+    change: "<技能行为改了什么>"
+    cases_updated: ["CASE-001", "CASE-FAIL-001"]

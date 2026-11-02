@@ -1,0 +1,95 @@
+name: skill-conductor
+
+# skill-conductor 的专项 CI。规范检查、质量评分与回归阻塞合并；语义复核只输出报告。
+
+on:
+  pull_request:
+    paths:
+      - "skills/skill-conductor/**"
+      - ".github/workflows/skill-conductor.yml"
+  push:
+    branches: [main]
+    paths:
+      - "skills/skill-conductor/**"
+      - ".github/workflows/skill-conductor.yml"
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: skills/skill-conductor
+
+env:
+  SPEC_LEVEL: "3"
+  QUALITY_TARGET: L3
+
+jobs:
+  self-check:
+    name: 工具链自检
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: node scripts/assessor/validate.mjs --self-check-only
+      - run: node scripts/assessor/score.mjs --self-check-only
+      - run: node scripts/assessor/llm-judge.mjs --self-check
+      - run: node scripts/stylist/wq-judge.mjs --self-check
+      - run: node scripts/mentor/blueprint.mjs --self-check
+      - run: node scripts/assessor/quality-model.mjs --check-yaml references/assessor/checks.yaml
+
+  regression:
+    name: 全量回归
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: node evals/run.mjs
+
+  spec-compliance:
+    name: 规范符合性
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: node scripts/assessor/validate.mjs . --level "$SPEC_LEVEL"
+
+  quality-score:
+    name: 质量评分门禁
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: node scripts/assessor/score.mjs . --target "$QUALITY_TARGET"
+
+  llm-judge:
+    name: 语义复核报告（不阻塞）
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    needs: [self-check]
+    env:
+      LLM_API_URL: ${{ secrets.LLM_API_URL }}
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      LLM_MODEL: ${{ vars.LLM_MODEL || 'gpt-4o-mini' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: 语义复核
+        if: ${{ env.LLM_API_KEY != '' }}
+        run: node scripts/assessor/llm-judge.mjs . --json llm-report.json
+      - name: 无凭证时跳过
+        if: ${{ env.LLM_API_KEY == '' }}
+        run: echo "SKIP: 未配置 LLM_API_KEY，语义复核未运行（不阻塞合并）"
+      - uses: actions/upload-artifact@v4
+        if: always() && hashFiles('skills/skill-conductor/llm-report.json') != ''
+        with:
+          name: llm-report
+          path: skills/skill-conductor/llm-report.json

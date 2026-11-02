@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skill-conductor.local/schema/skill-frontmatter.claude-code.schema.json",
+  "title": "Skill Frontmatter · L0 + L1（Claude Code 扩展）",
+  "description": "Claude Code 可加载的完整 frontmatter 字段集。additionalProperties: false 用于阻断 SPEC-014 所指的静默失效（字段名拼错被无声忽略）。使用任一 L1 字段即触发 SPEC-061 的可移植性声明义务。",
+  "$comment": "依据：code.claude.com/docs/en/skills.md 官方 frontmatter 表（【已验证】E-10，共 20 字段）+ 静默失效机制 E-11。",
+  "type": "object",
+  "required": ["name", "description"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "$comment": "SPEC-002 / SPEC-010。L1 层：CC 中 name 仅作显示名，命令名来自目录名。",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "description": {
+      "$comment": "SPEC-011 / SPEC-012 / SPEC-013。",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "when_to_use": {
+      "$comment": "L1。追加到 description，合并文本在列表中被截断于 1536 字符（E-14）。SPEC-013。",
+      "type": "string",
+      "minLength": 1
+    },
+    "argument-hint": {
+      "$comment": "L1。SPEC-040 输入契约 / SPEC-041 占位符必须被正文解释。跨生态上传硬报错（E-12）。",
+      "type": "string",
+      "minLength": 1
+    },
+    "arguments": {
+      "$comment": "L1。命名位置参数，供 $name 替换。SPEC-041。",
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        { "type": "array", "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" }, "minItems": 1 }
+      ]
+    },
+    "disable-model-invocation": {
+      "$comment": "L1。SPEC-030 / SPEC-031：设为 true 时必须与 agents/openai.yaml 的 policy.allow_implicit_invocation: false 成对出现。",
+      "$ref": "#/$defs/booleanLike"
+    },
+    "user-invocable": {
+      "$comment": "L1。设为 false 表示仅模型可调用。注意与 disable-model-invocation 是相反方向的开关，不可混用。",
+      "$ref": "#/$defs/booleanLike"
+    },
+    "allowed-tools": {
+      "$comment": "L1 位置但属 L0 字段（spec 六字段之一）。SPEC-021 精确作用域 / SPEC-074 通配符论证 / SPEC-020 必要性说明。E-13：不受 workspace trust 约束。",
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 }
+      ]
+    },
+    "disallowed-tools": {
+      "$comment": "L1。SPEC-022。",
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 }
+      ]
+    },
+    "model": {
+      "$comment": "L1。SPEC-054 模型依赖声明。取值同 /model 或 inherit。",
+      "type": "string",
+      "minLength": 1
+    },
+    "effort": {
+      "$comment": "L1。SPEC-054。",
+      "type": "string",
+      "enum": ["low", "medium", "high", "xhigh", "max"]
+    },
+    "context": {
+      "$comment": "L1。设为 fork 时在子代理中运行。SPEC-044 规模声明相关。",
+      "type": "string",
+      "enum": ["fork"]
+    },
+    "agent": {
+      "$comment": "L1。仅当 context: fork 时有意义。",
+      "type": "string",
+      "minLength": 1
+    },
+    "background": {
+      "$comment": "L1。仅当 context: fork 时有意义。SPEC-044 可否中断/恢复。",
+      "$ref": "#/$defs/booleanLike"
+    },
+    "hooks": {
+      "$comment": "L1。会话级 hooks。SPEC-045 副作用声明的重点关注对象：hooks 可在技能之外产生副作用。",
+      "type": "object"
+    },
+    "paths": {
+      "$comment": "L1。glob 激活限制。SPEC-032 时机控制的辅助手段。",
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 }
+      ]
+    },
+    "shell": {
+      "$comment": "L1。SPEC-050 运行时依赖：设为 bash 时无 Git Bash 的环境会直接失败。",
+      "oneOf": [
+        { "type": "string", "enum": ["bash", "powershell", "0"] },
+        { "type": "number", "enum": [0] }
+      ]
+    },
+    "metadata": {
+      "$comment": "L0 字段。SPEC-016 string->string / SPEC-017 键不得复用字段名。portability 为本规范保留键（SPEC-060/061）。",
+      "type": "object",
+      "properties": {
+        "portability": {
+          "$comment": "SPEC-061：使用任一 L1 字段时必须为 claude-code-only。",
+          "type": "string",
+          "enum": ["portable", "claude-code-only"]
+        },
+        "contract-version": { "$comment": "本规范的契约版本号。", "type": "string" },
+        "side-effects": { "$comment": "SPEC-045 的机器可读形式。", "type": "string" },
+        "failure-modes": { "$comment": "SPEC-043 的机器可读形式。", "type": "string" }
+      },
+      "additionalProperties": { "type": "string" },
+      "propertyNames": { "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }
+    },
+    "license": {
+      "$comment": "L0 字段。SPEC-018。",
+      "type": "string",
+      "minLength": 1
+    },
+    "compatibility": {
+      "$comment": "L0 字段。SPEC-019 / SPEC-051 依赖声明首选位置 / SPEC-020 allowed-tools 理由。",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    }
+  },
+  "$defs": {
+    "booleanLike": {
+      "$comment": "官方明文（E-10）：布尔字段除 true/false 外还接受 yes/no/on/off/1/0，任意大小写（v2.1.218+）。",
+      "oneOf": [
+        { "type": "boolean" },
+        { "type": "string", "enum": ["true", "false", "yes", "no", "on", "off", "1", "0", "True", "False", "Yes", "No", "On", "Off"] },
+        { "type": "number", "enum": [0, 1] }
+      ]
+    }
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skill-conductor.local/schema/skill-frontmatter.core.schema.json",
+  "title": "Skill Frontmatter · L0 中立内核",
+  "description": "跨生态可移植的 Agent Skill frontmatter 字段集。对应 SPEC-060：声明『跨生态可移植』的技能，frontmatter 必须严格符合本 schema（additionalProperties: false）。",
+  "$comment": "依据：agentskills.io/specification（【已验证】E-09）+ Claude Code 官方文档 E-12 的硬报错字段白名单。SPEC-060 / SPEC-014 / SPEC-015。",
+  "type": "object",
+  "required": ["name", "description"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "$comment": "SPEC-002 命名约束 / SPEC-010 必须等于目录名（目录名约束由 validate.mjs 的 V-010 检查，JSON Schema 无法表达）",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "description": {
+      "$comment": "SPEC-011 非空且 1-1024 字符 / SPEC-012 质量由专家锚点评审 / SPEC-013 与 when_to_use 合并截断阈值 1536 由检查器计算",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "license": {
+      "$comment": "SPEC-018。CC 接受但不生效（E-10）。",
+      "type": "string",
+      "minLength": 1
+    },
+    "compatibility": {
+      "$comment": "SPEC-019 上限 500 字符；SPEC-051 推荐在此声明运行时依赖；SPEC-020 在此说明 allowed-tools 的理由。",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "metadata": {
+      "$comment": "SPEC-016 必须为 string -> string 映射，禁止嵌套对象或数组。SPEC-017 键不得与 frontmatter 字段名冲突（由检查器 V-017 校验）。portability / contract-version / side-effects / failure-modes 为本规范保留键。",
+      "type": "object",
+      "properties": {
+        "portability": {
+          "$comment": "SPEC-060 / SPEC-061：portable 表示仅用 L0 六字段，跨生态可移植；claude-code-only 表示使用了 L1 字段。",
+          "type": "string",
+          "enum": ["portable", "claude-code-only"]
+        },
+        "contract-version": { "$comment": "本规范的契约版本号。", "type": "string" },
+        "side-effects": { "$comment": "SPEC-045 的机器可读形式：逗号分隔的副作用类别。", "type": "string" },
+        "failure-modes": { "$comment": "SPEC-043 的机器可读形式：逗号分隔的失败模式标识。", "type": "string" }
+      },
+      "additionalProperties": { "type": "string" },
+      "propertyNames": { "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }
+    },
+    "allowed-tools": {
+      "$comment": "SPEC-021 精确作用域（专家+机器混合判定）；SPEC-074 通配符须论证。spec 标记为 Experimental（E-09）。",
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 }
+      ]
+    }
+  }
+}

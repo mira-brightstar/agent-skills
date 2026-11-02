@@ -1,0 +1,4 @@
+interface:
+  display_name: "Release Notes"
+  short_description: "Generate release notes from merged PRs between two refs"
+  default_prompt: "Generate release notes from the last tag to HEAD"

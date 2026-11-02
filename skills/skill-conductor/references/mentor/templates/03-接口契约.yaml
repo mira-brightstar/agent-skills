@@ -1,0 +1,63 @@
+# 接口契约
+#
+# STEP-03 中间产物 · 模板
+# 放置位置：design/<skill-name>/03-接口契约.yaml
+# 检查点：五段契约齐备，且已同步写入 SKILL.md 正文（由 scripts/assessor/validate.mjs 的
+#         V-040 / V-042 / V-043 / V-045 / V-050 机器校验）
+#
+# 说明：本文件是**设计稿**，SKILL.md 正文才是生效的契约。
+#       之所以先写 YAML 再写正文：结构化的字段能逼你把「缺省行为」「失败行为」写具体，
+#       而这些恰恰是散文最容易含糊掉的地方。
+
+skill: <skill-name>
+
+inputs:
+  # 无参数时写 inputs: []，并在 SKILL.md 的 Inputs 小节写明「无参数」
+  - name: "<arg1>"
+    required: false
+    meaning: "<这个参数是什么>"
+    default_behavior: "<省略时的行为。必须具体，不能写「使用默认值」>"
+    invalid_handling: "<格式非法时的行为>"
+  - name: "<arg2>"
+    required: false
+    meaning: "<...>"
+    default_behavior: "<...>"
+    invalid_handling: "<...>"
+
+outputs:
+  form: "<conversation | file | both>"
+  # form 含 file 时必填：
+  path_rule: "<路径规则，例如 docs/releases/<to-ref>.md>"
+  format: "<格式说明；复杂格式指向 references/ 下的文件>"
+  summary_in_conversation: "<在对话中返回什么摘要>"
+
+failure_modes:
+  # 至少 2 类。每类必须有明确行为。禁止「静默跳过」「静默兜底」。
+  - scenario: "<前置条件不满足>"
+    behavior: "<报错并说明如何满足 / 询问用户>"
+  - scenario: "<输入非法>"
+    behavior: "<拒绝并指出哪一项非法>"
+  - scenario: "<外部依赖失败>"
+    behavior: "<报错并给出排查方向>"
+
+side_effects:
+  # 无副作用时写 side_effects: []，并在 SKILL.md 写明「无」
+  - kind: "<read-files | write-files | exec-command | network | external-service-write | irreversible>"
+    detail: "<具体做了什么>"
+    reversible: <true | false>
+    confirmation_required: <true | false>   # 不可逆操作必须为 true
+
+dependencies:
+  runtime: ["<外部命令与版本要求>"]
+  external_services:
+    - name: "<服务名>"
+      endpoint: "<端点>"
+      auth: "<认证方式。**禁止在此写入任何密钥**>"
+      data_sent: "<会发送哪些数据到该端点>"   # 对应 SPEC-073 数据边界声明
+  model: "<特殊能力要求，无则写 none>"
+
+# 以下三项会同步写入 SKILL.md 的 metadata（机器可读形式）
+metadata:
+  contract-version: "1"
+  side-effects: "<逗号分隔的 kind 列表，与上面 side_effects 一致>"
+  failure-modes: "<逗号分隔的失败模式标识，与上面 failure_modes 一致>"

@@ -1,0 +1,25 @@
+# audit.mjs 的仓库约定配置
+#
+# 默认值来自样本仓库 mattpocock/skills。其他仓库可复制本文件并按自己的结构调整。
+# 若仓库不是「skills/<bucket>/<skill>」分桶模型，audit.mjs 会自动识别为 flat / single，
+# 并把 C-05~C-12、C-15 显式标记为 SKIP，而不是静默当作通过。
+
+promoted:
+  - engineering
+  - productivity
+
+non_promoted:
+  - misc
+  - in-progress
+  - deprecated
+
+doc_sections:
+  - What it does
+  - When to reach for it
+  - Common questions
+  - "It's working if"
+
+skills_dir: skills
+docs_dir: docs
+plugin_file: .claude-plugin/plugin.json
+package_file: package.json

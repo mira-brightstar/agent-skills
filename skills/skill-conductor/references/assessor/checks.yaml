@@ -1,0 +1,449 @@
+# checks.yaml — 质量模型的机器可读形式
+#
+# ⚠️ 本文件由 scripts/assessor/quality-model.mjs --emit-yaml 生成，请勿手工编辑。
+#    单一真相源是 scripts/assessor/quality-model.mjs；CI 会用 --check-yaml 校验本文件是否最新。
+#    生成命令：node scripts/assessor/quality-model.mjs --emit-yaml references/assessor/checks.yaml
+
+version: 1.0
+generated_by: "scripts/assessor/quality-model.mjs"
+
+levels:
+  - id: 1
+    code: L1
+    name: Demo 级
+    criterion: 能在自己的机器上跑起来
+  - id: 2
+    code: L2
+    name: 可用级
+    criterion: 换个人也能用，不需要问作者
+  - id: 3
+    code: L3
+    name: 团队级
+    criterion: 团队共享，改动不会破坏别人
+  - id: 4
+    code: L4
+    name: 生产级
+    criterion: 生产环境依赖它，出问题要能定位
+  - id: 5
+    code: L5
+    name: 关键生产级
+    criterion: 关键路径，事故代价不可接受
+
+dimensions:
+  - id: FN
+    name: 功能
+    question: 它能不能稳定地做成那件事？
+    weight: 1
+    gate: false
+  - id: RB
+    name: 健壮
+    question: 出问题时它的行为可预期吗？
+    weight: 1
+    gate: false
+  - id: DC
+    name: 文档
+    question: 别人能否不读源码就正确使用它？
+    weight: 1
+    gate: false
+  - id: TS
+    name: 可测
+    question: 改动之后，怎么知道没坏？
+    weight: 2
+    gate: true
+  - id: MT
+    name: 可维护
+    question: 三个月后还能改得动吗？
+    weight: 1
+    gate: false
+  - id: SC
+    name: 合规与安全
+    question: 它会不会越权或造成不可逆损害？
+    weight: 1.5
+    gate: true
+
+checks:
+  - id: QM-FN-L1
+    dimension: FN
+    level: 1
+    verify: machine
+    runner: validate
+    depends_on: [V-001, V-002, V-003, V-004, V-010, V-011, V-014, V-015]
+    requirement: 技能可被生态解析并加载：SKILL.md 存在、首行为 ---、frontmatter 合法、name 与目录名一致、description 非空
+    threshold: 全部 8 项基础检查通过
+    evidence: SPEC-001~015（agentskills.io spec 硬约束）
+    exemption: 无
+    anchor: null
+  - id: QM-FN-L1b
+    dimension: FN
+    level: 1
+    verify: expert
+    runner: null
+    depends_on: []
+    requirement: description 能让人与模型判断出「这是干什么的」
+    threshold: 锚点 §4.1 得分 ≥1
+    evidence: SPEC-012
+    exemption: 无
+    anchor: §4.1
+  - id: QM-FN-L2
+    dimension: FN
+    level: 2
+    verify: expert
+    runner: null
+    depends_on: []
+    requirement: 技能内声明了「什么算完成」的判据，而不是只描述过程
+    threshold: 能指出至少一处完成判据，且非「做完为止」这类空话
+    evidence: writing-for-agents 的 completion criterion 要求
+    exemption: 单步技能
+    anchor: §5.1
+  - id: QM-FN-L2b
+    dimension: FN
+    level: 2
+    verify: machine
+    runner: repo
+    depends_on: []
+    requirement: 正文含至少 1 个可辨识的真实示例（输入 → 输出 或 输入 → 结果）
+    threshold: 正文存在围栏代码块或「示例」小节，且长度 ≥5 行
+    evidence: agentskills.io spec 推荐章节「Examples of inputs and outputs」
+    exemption: 无
+    anchor: null
+  - id: QM-FN-L3
+    dimension: FN
+    level: 3
+    verify: machine
+    runner: validate
+    depends_on: [V-040, V-041, V-042]
+    requirement: 输入契约与输出契约完整：每个参数有含义与缺省行为，产出形态/路径/格式明确
+    threshold: Inputs、Outputs 小节存在且占位符全部被解释
+    evidence: SPEC-040 / 041 / 042
+    exemption: 无
+    anchor: null
+  - id: QM-FN-L3b
+    dimension: FN
+    level: 3
+    verify: expert
+    runner: null
+    depends_on: []
+    requirement: 边界输入有定义（空输入、超长输入、非法格式）
+    threshold: 锚点 §5.2 得分 ≥1
+    evidence: SPEC-043 的延伸
+    exemption: 无输入参数的技能
+    anchor: §5.2
+  - id: QM-FN-L4
+    dimension: FN
+    level: 4
+    verify: machine
+    runner: repo
+    depends_on: []
+    requirement: 存在可复现的回归基线：示例输入与期望输出成对存在，可据此判断改动是否破坏行为
+    threshold: 技能目录下存在 evals/ 或 tests/ 且含 ≥1 个「输入+期望」对
+    evidence: SPEC-042 的延伸；可复现性维度
+    exemption: 无
+    anchor: null
+  - id: QM-FN-L5
+    dimension: FN
+    level: 5
+    verify: expert
+    runner: null
+    depends_on: []
+    requirement: 有失败注入验证：依赖失败、输入非法、权限不足时的行为已被实际验证过
+    threshold: 锚点 §5.3 得分 =2
+    evidence: SPEC-043 的延伸
+    exemption: 无
+    anchor: §5.3
+  - id: QM-RB-L1
+    dimension: RB
+    level: 1
+    verify: machine
+    runner: repo
+    depends_on: []
+    requirement: L1 不设健壮性要求（Demo 级允许「跑通即可」，此处显式声明为无要求而非遗漏）
+    threshold: 恒定通过
+    evidence: 分级设计原则：低级别不设无效约束
+    exemption: 全部
+    anchor: null
+  - id: QM-RB-L2
+    dimension: RB
+    level: 2
+    verify: expert
+    runner: null
+    depends_on: []
+    requirement: 前置条件被声明：需要什么命令、什么权限、什么网络
+    threshold: 锚点 §5.6 得分 ≥1（机器侧的依赖声明在 QM-RB-L3 判定）
+    evidence: SPEC-050 的前置部分
+    exemption: 无外部依赖
+    anchor: §5.6
+  - id: QM-RB-L3
+    dimension: RB
+    level: 3
+    verify: hybrid
+    runner: validate
+    depends_on: [V-043, V-050]
+    requirement: 失败模式声明 ≥2 类且禁止静默降级；依赖声明完整（含「无外部依赖」的显式声明）
+    threshold: Failure modes 与 Dependencies 小节存在；且专家确认无「静默跳过/静默兜底」表述
+    evidence: SPEC-043 / 050 + 锚点 §4.6
+    exemption: 无
+    anchor: §4.6
+  - id: QM-RB-L4
+    dimension: RB
+    level: 4
+    verify: expert
+    runner: null
+    depends_on: []
+    requirement: 写操作声明幂等性或冲突处理策略（重复执行会怎样、目标已存在怎么办）
+    threshold: 锚点 §5.4 得分 ≥1
+    evidence: 新增约定
+    exemption: 只读技能
+    anchor: §5.4
+  - id: QM-RB-L5
+    dimension: RB
+    level: 5
+    verify: expert
+    runner: null
+    depends_on: []
+    requirement: 规模与资源边界已声明：预期轮数/token 量级、可否中断、中断后可否恢复
+    threshold: 锚点 §4.7 得分 ≥1
+    evidence: SPEC-044
+    exemption: 单轮内完成的短技能
+    anchor: §4.7
+  - id: QM-DC-L1
+    dimension: DC
+    level: 1
+    verify: machine
+    runner: validate
+    depends_on: [V-011]
+    requirement: description 非空且长度合法
+    threshold: 1 <= len <= 1024
+    evidence: SPEC-011
+    exemption: 无
+    anchor: null
+  - id: QM-DC-L2
+    dimension: DC
+    level: 2
+    verify: expert
+    runner: null
+    depends_on: []
+    requirement: description 同时说明「做什么」与「何时用」，含可匹配的关键词
+    threshold: 锚点 §4.1 得分 =2
+    evidence: SPEC-012
+    exemption: user-invoked 技能只需说明「做什么」
+    anchor: §4.1
+  - id: QM-DC-L3
+    dimension: DC
+    level: 3
+    verify: machine
+    runner: validate
+    depends_on: [V-040, V-042, V-043, V-045, V-050]
+    requirement: 五段契约小节齐备（Inputs / Outputs / Failure modes / Side effects / Dependencies）
+    threshold: 5/5 存在（内容为空时写「无」而非删除小节）
+    evidence: SPEC-040~050 + §3.2
+    exemption: 无
+    anchor: null
+  - id: QM-DC-L3b
+    dimension: DC
+    level: 3
+    verify: machine
+    runner: audit
+    depends_on: [C-11, C-12]
+    requirement: "已发布技能有人类文档页，且含固定结构（What it does / When to reach for it / Common questions / It's working if）"
+    threshold: 文档页存在且四段标题齐备
+    evidence: 模式库 P-04
+    exemption: 无人类文档（纯模型技能）
+    anchor: null
+  - id: QM-DC-L4
+    dimension: DC
+    level: 4
+    verify: machine
+    runner: repo
+    depends_on: []
+    requirement: 文档含 ≥1 个真实示例，且示例中的输入输出与技能实际行为一致
+    threshold: 文档页或正文存在示例块；且与 QM-FN-L4 的回归基线一致
+    evidence: agentskills.io spec 推荐章节
+    exemption: 无
+    anchor: null
+  - id: QM-DC-L5
+    dimension: DC
+    level: 5
+    verify: machine
+    runner: repo
+    depends_on: []
+    requirement: 有变更记录：技能行为变更可追溯到版本历史
+    threshold: 仓库存在 CHANGELOG.md 或 changeset 目录，且含该技能的条目
+    evidence: 模式库 P-11
+    exemption: 未发布技能
+    anchor: null
+  - id: QM-TS-L1
+    dimension: TS
+    level: 1
+    verify: machine
+    runner: repo
+    depends_on: []
+    requirement: L1 不设可测性要求（显式声明为无要求）
+    threshold: 恒定通过
+    evidence: 分级设计原则
+    exemption: 全部
+    anchor: null
+  - id: QM-TS-L2
+    dimension: TS
+    level: 2
+    verify: expert
+    runner: null
+    depends_on: []
+    requirement: 成功判据是行为描述而非主观形容词
+    threshold: 锚点 §5.5 得分 ≥1
+    evidence: writing-for-agents 的 completion criterion
+    exemption: 无
+    anchor: §5.5
+  - id: QM-TS-L2b
+    dimension: TS
+    level: 2
+    verify: machine
+    runner: repo
+    depends_on: []
+    requirement: "声明了可核验的验证说明（技能内或配套文档页存在 Verification / 如何确认 / It's working if 之类的固定小节）"
+    threshold: 技能目录任一 Markdown 或 docs/<bucket>/<name>.md 中存在验证类小节标题
+    evidence: "模式库 P-04（样本仓库 25 个已发布技能均有 It's working if 段）"
+    exemption: 无
+    anchor: null
+  - id: QM-TS-L3
+    dimension: TS
+    level: 3
+    verify: machine
+    runner: repo
+    depends_on: []
+    requirement: 提供 ≥1 个评测用例：输入情境 + 期望行为断言
+    threshold: 存在 evals/*.yaml|md|json，且含 case / expect 两类字段
+    evidence: 阶段 0 已确认的测试定义
+    exemption: 无
+    anchor: null
+  - id: QM-TS-L4
+    dimension: TS
+    level: 4
+    verify: machine
+    runner: repo
+    depends_on: []
+    requirement: 评测可自动执行、覆盖失败路径，且已接入回归门禁（改动导致评测失败时阻断合并）
+    threshold: 存在可执行运行器；≥1 个失败路径用例；CI 配置中含评测运行步骤
+    evidence: 反模式 A-04 的对照
+    exemption: 无
+    anchor: null
+  - id: QM-TS-L5
+    dimension: TS
+    level: 5
+    verify: expert
+    runner: null
+    depends_on: []
+    requirement: 评测有覆盖率要求，且用例随技能行为变更同步更新（可追溯到更新记录）
+    threshold: 锚点 §5.7 得分 =2
+    evidence: 新增约定：无覆盖率与同步机制，评测会在几次迭代后悄悄失效
+    exemption: 无
+    anchor: §5.7
+  - id: QM-MT-L1
+    dimension: MT
+    level: 1
+    verify: machine
+    runner: repo
+    depends_on: []
+    requirement: L1 不设可维护性要求（显式声明为无要求）
+    threshold: 恒定通过
+    evidence: 分级设计原则
+    exemption: 全部
+    anchor: null
+  - id: QM-MT-L2
+    dimension: MT
+    level: 2
+    verify: machine
+    runner: validate
+    depends_on: [V-052]
+    requirement: 技能自包含于单一目录，不依赖仓库内其他技能的文件
+    threshold: 无 ../ 形式的跨目录引用
+    evidence: SPEC-052
+    exemption: 无
+    anchor: null
+  - id: QM-MT-L3
+    dimension: MT
+    level: 3
+    verify: machine
+    runner: audit
+    depends_on: [C-15, C-05, C-07]
+    requirement: 版本单一真相源且多清单一致；分发清单与实际目录双向对齐
+    threshold: 版本字段一致；清单无悬空、无漏登
+    evidence: SPEC-063 / 064
+    exemption: 无分发清单
+    anchor: null
+  - id: QM-MT-L4
+    dimension: MT
+    level: 4
+    verify: machine
+    runner: repo
+    depends_on: []
+    requirement: 体量受控：SKILL.md ≤500 行，深层材料外置到引用文件且引用不超过一层
+    threshold: SKILL.md 行数 <= 500；无嵌套引用链
+    evidence: agentskills.io spec（官方为建议非硬约束，故定 SHOULD/生产级）
+    exemption: 无
+    anchor: null
+  - id: QM-MT-L5
+    dimension: MT
+    level: 5
+    verify: machine
+    runner: repo
+    depends_on: []
+    requirement: 有 owner/维护者声明与废弃策略（谁负责、弃用时如何通知）
+    threshold: 仓库存在 CODEOWNERS 或 metadata 含 owner；且有 deprecated 处理约定
+    evidence: 模式库 P-09
+    exemption: 无
+    anchor: null
+  - id: QM-SC-L1
+    dimension: SC
+    level: 1
+    verify: machine
+    runner: repo
+    depends_on: []
+    requirement: L1 不设安全要求（显式声明为无要求）
+    threshold: 恒定通过
+    evidence: 分级设计原则
+    exemption: 全部
+    anchor: null
+  - id: QM-SC-L2
+    dimension: SC
+    level: 2
+    verify: machine
+    runner: validate
+    depends_on: [V-070]
+    requirement: 不含硬编码凭证、密钥、token
+    threshold: 密钥模式扫描零命中（占位符豁免）
+    evidence: SPEC-070
+    exemption: 占位符与示例值
+    anchor: null
+  - id: QM-SC-L3
+    dimension: SC
+    level: 3
+    verify: hybrid
+    runner: validate
+    depends_on: [V-045]
+    requirement: 副作用声明完整，且区分可逆与不可逆
+    threshold: Side effects 小节存在；专家确认可逆性已区分
+    evidence: SPEC-045 + 锚点 §4.8
+    exemption: 完全无副作用的技能（需显式写「无」）
+    anchor: §4.8
+  - id: QM-SC-L4
+    dimension: SC
+    level: 4
+    verify: hybrid
+    runner: validate
+    depends_on: [V-021]
+    requirement: allowed-tools 最小权限且给出必要性说明；Bash 系工具已收窄作用域
+    threshold: 无裸 Bash/PowerShell/Execute；专家确认每个工具都有用途说明
+    evidence: SPEC-020 / 021 + E-13（不受 workspace trust 约束）
+    exemption: 未使用 allowed-tools
+    anchor: §4.2
+  - id: QM-SC-L5
+    dimension: SC
+    level: 5
+    verify: expert
+    runner: null
+    depends_on: []
+    requirement: 提示注入防护 + 数据处理边界声明 + 许可声明
+    threshold: 锚点 §4.11 / §4.12 各 ≥1；且 license 或仓库级许可存在
+    evidence: SPEC-072 / 073 / 018
+    exemption: 完全本地执行且无外部内容输入的技能
+    anchor: "§4.11, §4.12"

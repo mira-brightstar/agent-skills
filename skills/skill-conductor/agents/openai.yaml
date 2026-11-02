@@ -1,0 +1,6 @@
+interface:
+  display_name: "技能总控台"
+  short_description: "评审 skill 的合格性与文风，或指导从零开发新技能"
+  default_prompt: "当用户要求评审、检查一个已有 skill，或从零开发一个 skill 时：先运行自动核对，再按「结论 → 评分 → 问题 → 建议 → 下一步」给出用户能理解的报告。"
+policy:
+  allow_implicit_invocation: true
